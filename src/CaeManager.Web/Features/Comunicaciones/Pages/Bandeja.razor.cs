@@ -21,6 +21,7 @@ using CaeManager.Application.Comunicaciones.Queries.ObtenerConversacionPorId;
 using CaeManager.Application.Comunicaciones.Queries.ObtenerConversaciones;
 using CaeManager.Application.Comunicaciones.Queries.ObtenerFormatosRequeridosCentro;
 using CaeManager.Application.Comunicaciones.Queries.ObtenerMacros;
+using CaeManager.Application.Comunicaciones.Queries.ObtenerMensajesBuzonPersonal;
 using CaeManager.Application.Comunicaciones.Commands.EnviarMensajeNuevo;
 using CaeManager.Application.Comunicaciones.Commands.PedirPrioridadValidacion;
 using CaeManager.Application.Comunicaciones.Queries.ObtenerBorradorPedirPrioridad;
@@ -78,6 +79,16 @@ public partial class Bandeja : ComponentBase, IAsyncDisposable
     /// página, con el mismo patrón "la URL manda" que el resto de filtros.
     /// </summary>
     [SupplyParameterFromQuery(Name = "conversacion")] public string? ConversacionInicial { get; set; }
+
+    /// <summary>
+    /// Toggle "Clientes | Mi buzón personal" (rediseño acordado, ver memoria
+    /// hydra-buzon-personal-rediseno-pendiente): "clientes" (por defecto) o
+    /// "personal" — la URL manda, mismo criterio que el resto de filtros de
+    /// esta página.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "vista")] public string? VistaInicial { get; set; }
+    private string _vista = "clientes";
+    private IReadOnlyList<MensajeBuzonPersonalDto> _mensajesBuzonPersonal = [];
 
     // --- Filtros ---
     private string _estadoFiltro = string.Empty;
@@ -213,7 +224,10 @@ public partial class Bandeja : ComponentBase, IAsyncDisposable
         if (TenantActual.TenantId is { } tenantId)
             _suscripcionTiempoReal = Notificador.Suscribir(tenantId, AlRecibirMensajeAsync);
 
-        await CargarListaAsync();
+        if (_vista == "personal")
+            await CargarBuzonPersonalAsync();
+        else
+            await CargarListaAsync();
     }
 
     public async ValueTask DisposeAsync()
@@ -274,6 +288,54 @@ public partial class Bandeja : ComponentBase, IAsyncDisposable
         _mesFiltro = MesInicial ?? string.Empty;
         _clienteIdFiltro = ClienteInicial ?? string.Empty;
         _busqueda = BusquedaInicial ?? string.Empty;
+        _vista = VistaInicial == "personal" ? "personal" : "clientes";
+    }
+
+    /// <summary>
+    /// Cambia entre "Clientes" y "Mi buzón personal" — limpia la conversación
+    /// seleccionada (una conversación de una vista no tiene sentido en la
+    /// otra) y recarga la lista de la vista de destino. La URL manda, mismo
+    /// criterio que el resto de filtros de esta página.
+    /// </summary>
+    private async Task CambiarVistaAsync(string vista)
+    {
+        if (_vista == vista) return;
+
+        _vista = vista;
+        _conversacionSeleccionadaId = null;
+        _detalle = null;
+        NavigationManager.ActualizarFiltrosEnUrl(new Dictionary<string, string?>
+        {
+            ["vista"] = vista == "clientes" ? null : vista,
+            ["conversacion"] = null
+        });
+
+        if (vista == "personal")
+            await CargarBuzonPersonalAsync();
+        else
+            await CargarListaAsync();
+    }
+
+    private async Task CargarBuzonPersonalAsync()
+    {
+        _cargandoLista = true;
+        _errorCargaLista = false;
+        StateHasChanged();
+
+        try
+        {
+            _mensajesBuzonPersonal = await Mediator.Send(new ObtenerMensajesBuzonPersonalQuery());
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error al cargar el buzón personal dentro de Comunicaciones.");
+            _errorCargaLista = true;
+        }
+        finally
+        {
+            _cargandoLista = false;
+            StateHasChanged();
+        }
     }
 
     private async Task CargarListaAsync()

@@ -1,7 +1,0 @@
-.buzon-personal-cuerpo {
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    background-color: var(--color-surface-hover);
-    font: var(--font-body-md);
-    overflow-x: auto;
-}

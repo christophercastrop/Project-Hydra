@@ -129,6 +129,30 @@
     border-bottom: var(--border-default);
 }
 
+/* Toggle "Clientes | Mi buzón personal" — siempre visible encima de los
+   filtros, que solo aplican a la vista de Clientes. */
+.bandeja-vista-toggle {
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-4) 0;
+}
+
+.bandeja-vista-personal-descripcion {
+    margin: 0;
+    padding: var(--space-4);
+    border-bottom: var(--border-default);
+    font: var(--font-body-sm);
+    color: var(--color-text-muted);
+}
+
+.bandeja-vista-personal-solo-lectura {
+    margin: 0;
+    padding: var(--space-4) var(--space-5);
+    font: var(--font-body-sm);
+    color: var(--color-text-muted);
+    text-align: center;
+}
+
 .bandeja-toggles {
     display: flex;
     gap: var(--space-2);

@@ -1,0 +1,76 @@
+@*
+    Fila de la vista "Mi buzón personal" del toggle de Comunicaciones (ver
+    Bandeja.razor) — mismas clases CSS que FilaConversacion (bandeja-fila…)
+    para no duplicar estilo, pero sobre MensajeBuzonPersonalDto: un mensaje
+    entrante suelto, no una Conversacion agrupada (el buzón personal del
+    gestor nunca se agrupa por Cliente, no hay Cliente que agrupar). Al
+    seleccionar se abre igualmente por ConversacionId — MensajeBuzonPersonalDto
+    referencia una Conversacion real (ronda de reducción de ruido en
+    Comunicaciones: el buzón personal usa el mismo dominio Conversacion/
+    Mensaje, solo con ConexionIntegracionId apuntando a una conexión personal
+    del gestor), así que el mismo ObtenerConversacionPorIdQuery + UnifiedTimeline
+    de la vista de Clientes sirve tal cual para el detalle.
+*@
+@using CaeManager.Application.Comunicaciones.Queries.ObtenerMensajesBuzonPersonal
+@using CaeManager.Domain.Comunicaciones
+
+<li class="bandeja-fila @(Activa ? "bandeja-fila-activa" : null)" @onclick="() => OnSeleccionar.InvokeAsync(Mensaje.ConversacionId)">
+    <span class="bandeja-fila-avatar" aria-hidden="true">@ObtenerIniciales(Mensaje.Remitente)</span>
+    <div class="bandeja-fila-contenido">
+        <div class="bandeja-fila-linea1">
+            <span class="bandeja-fila-titulo">
+                <span class="bandeja-fila-remitente">@Mensaje.Remitente</span>
+                <span class="bandeja-fila-separador">|</span>
+                <span class="bandeja-fila-asunto">@Mensaje.Asunto</span>
+            </span>
+            <span class="bandeja-fila-fecha">@FormatearFechaRelativa(Mensaje.FechaUtc)</span>
+        </div>
+        @if (DescribirBadge(Mensaje) is { } badge)
+        {
+            <div class="bandeja-fila-linea3">
+                <Badge Tono="@badge.Tono" Tamano="TamanoBadge.Pequeno">@badge.Etiqueta</Badge>
+            </div>
+        }
+    </div>
+</li>
+
+@code {
+    [Parameter, EditorRequired] public MensajeBuzonPersonalDto Mensaje { get; set; } = default!;
+    [Parameter] public bool Activa { get; set; }
+    [Parameter] public EventCallback<Guid> OnSeleccionar { get; set; }
+
+    /// <summary>
+    /// Ningún tono del semáforo de cumplimiento (Peligro/Advertencia/Éxito) se
+    /// usa aquí — están reservados en exclusiva para vigencia documental
+    /// (02_BRAND_AND_VISUAL_IDENTITY.md § 3.4, DDL-010) y nunca son
+    /// decorativos en otro contexto. "Posible phishing" se distingue por el
+    /// texto de la etiqueta, no por el color — mismo criterio que la antigua
+    /// BuzonPersonal.razor.cs.DescribirBadge, que este componente sustituye.
+    /// </summary>
+    private static (string Etiqueta, TonoBadge Tono)? DescribirBadge(MensajeBuzonPersonalDto mensaje) => mensaje switch
+    {
+        { ProveedorPlataformaCaeNombre: { } proveedor } => ($"Plataforma reconocida: {proveedor}", TonoBadge.Info),
+        { Motivo: MotivoRuidoMensaje.CorreoInterno } => ("Correo interno", TonoBadge.Neutro),
+        { Motivo: MotivoRuidoMensaje.PosiblePhishing } => ("Posible phishing", TonoBadge.Neutro),
+        _ => null
+    };
+
+    /// <summary>Mismo criterio que FilaConversacion.ObtenerIniciales.</summary>
+    private static string ObtenerIniciales(string remitente)
+    {
+        var local = remitente.Split('@')[0];
+        return local.Length >= 2 ? local[..2].ToUpperInvariant() : local.ToUpperInvariant();
+    }
+
+    private static string FormatearFechaRelativa(DateTime fechaUtc)
+    {
+        var transcurrido = DateTime.UtcNow - fechaUtc;
+
+        if (transcurrido.TotalMinutes < 1) return "ahora";
+        if (transcurrido.TotalMinutes < 60) return $"hace {(int)transcurrido.TotalMinutes} min";
+        if (transcurrido.TotalHours < 24) return $"hace {(int)transcurrido.TotalHours} h";
+        if (transcurrido.TotalDays < 30) return $"hace {(int)transcurrido.TotalDays} d";
+
+        return fechaUtc.ToString("dd/MM/yyyy");
+    }
+}

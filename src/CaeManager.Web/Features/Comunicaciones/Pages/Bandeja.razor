@@ -34,123 +34,176 @@
             <a class="bandeja-toolbar-enlace" href="/comunicaciones/macros">
                 <Icono Nombre="editar" Tamano="TamanoIcono.Pequeno" /> Macros
             </a>
-            <a class="bandeja-toolbar-enlace" href="/comunicaciones/buzon-personal">
-                <Icono Nombre="usuarios" Tamano="TamanoIcono.Pequeno" /> Buzón personal
-            </a>
         </div>
     </div>
 
     <div class="bandeja-layout">
         <aside class="bandeja-columna bandeja-filtros">
-            <div class="bandeja-filtros-form">
-                <CampoTexto Placeholder="Buscar conversaciones…" Valor="@_busqueda" ValorChanged="async v => { _busqueda = v; await AplicarFiltrosAsync(); }" />
+            @* Toggle "Clientes | Mi buzón personal" (rediseño acordado, ver
+               memoria hydra-buzon-personal-rediseno-pendiente): sustituye a
+               /comunicaciones/buzon-personal como página aislada — el buzón
+               personal del gestor ahora vive dentro del mismo maestro-detalle,
+               solo que de solo lectura (sin Composer ni Action Center, ver más
+               abajo), porque hoy no existe ningún comando de "responder" para
+               un mensaje del buzón personal. *@
+            <div class="bandeja-vista-toggle">
+                <button type="button" class="bandeja-toggle @(_vista == "clientes" ? "bandeja-toggle-activo" : null)" @onclick='() => CambiarVistaAsync("clientes")'>
+                    Clientes
+                </button>
+                <button type="button" class="bandeja-toggle @(_vista == "personal" ? "bandeja-toggle-activo" : null)" @onclick='() => CambiarVistaAsync("personal")'>
+                    Mi buzón personal
+                </button>
+            </div>
 
-                <div class="bandeja-toggles">
-                    <button type="button" class="bandeja-toggle @(!_soloAsignadasAMi && !_soloSinAsignar && !_soloEsperandoCliente ? "bandeja-toggle-activo" : null)" @onclick="VerTodasAsync">
-                        Todas
-                    </button>
-                    <button type="button" class="bandeja-toggle @(_soloAsignadasAMi ? "bandeja-toggle-activo" : null)" @onclick="FiltrarAsignadasAMiAsync">
-                        Asignado a mí
-                    </button>
-                    <button type="button" class="bandeja-toggle @(_soloSinAsignar ? "bandeja-toggle-activo" : null)" @onclick="FiltrarSinAsignarAsync">
-                        Sin asignar
-                    </button>
-                    <button type="button" class="bandeja-toggle @(_soloEsperandoCliente ? "bandeja-toggle-activo" : null)" @onclick="AlternarEsperandoCliente">
-                        Esperando cliente
-                    </button>
+            @if (_vista == "clientes")
+            {
+                <div class="bandeja-filtros-form">
+                    <CampoTexto Placeholder="Buscar conversaciones…" Valor="@_busqueda" ValorChanged="async v => { _busqueda = v; await AplicarFiltrosAsync(); }" />
+
+                    <div class="bandeja-toggles">
+                        <button type="button" class="bandeja-toggle @(!_soloAsignadasAMi && !_soloSinAsignar && !_soloEsperandoCliente ? "bandeja-toggle-activo" : null)" @onclick="VerTodasAsync">
+                            Todas
+                        </button>
+                        <button type="button" class="bandeja-toggle @(_soloAsignadasAMi ? "bandeja-toggle-activo" : null)" @onclick="FiltrarAsignadasAMiAsync">
+                            Asignado a mí
+                        </button>
+                        <button type="button" class="bandeja-toggle @(_soloSinAsignar ? "bandeja-toggle-activo" : null)" @onclick="FiltrarSinAsignarAsync">
+                            Sin asignar
+                        </button>
+                        <button type="button" class="bandeja-toggle @(_soloEsperandoCliente ? "bandeja-toggle-activo" : null)" @onclick="AlternarEsperandoCliente">
+                            Esperando cliente
+                        </button>
+                    </div>
+
+                    <details class="bandeja-filtros-avanzados">
+                        <summary>Más filtros</summary>
+                        <div class="bandeja-filtros-avanzados-campos">
+                            <CampoSelect Etiqueta="Estado" Valor="@_estadoFiltro" ValorChanged="async v => { _estadoFiltro = v; await AplicarFiltrosAsync(); }">
+                                <option value="">Todos los estados</option>
+                                <option value="@nameof(EstadoConversacion.Abierta)">Abierta</option>
+                                <option value="@nameof(EstadoConversacion.Pendiente)">Pendiente</option>
+                                <option value="@nameof(EstadoConversacion.Resuelta)">Resuelta</option>
+                                <option value="@nameof(EstadoConversacion.Cerrada)">Cerrada</option>
+                            </CampoSelect>
+
+                            <CampoTexto Etiqueta="Mes" Type="month" Valor="@_mesFiltro" ValorChanged="async v => { _mesFiltro = v; await AplicarFiltrosAsync(); }" />
+
+                            <CampoSelect Etiqueta="Cliente" Valor="@_clienteIdFiltro" ValorChanged="async v => { _clienteIdFiltro = v; await AplicarFiltrosAsync(); }">
+                                <option value="">Todos los clientes</option>
+                                @foreach (var cliente in _clientesSelector)
+                                {
+                                    <option value="@cliente.Id">@cliente.RazonSocial</option>
+                                }
+                            </CampoSelect>
+                        </div>
+                    </details>
                 </div>
 
-                <details class="bandeja-filtros-avanzados">
-                    <summary>Más filtros</summary>
-                    <div class="bandeja-filtros-avanzados-campos">
-                        <CampoSelect Etiqueta="Estado" Valor="@_estadoFiltro" ValorChanged="async v => { _estadoFiltro = v; await AplicarFiltrosAsync(); }">
-                            <option value="">Todos los estados</option>
-                            <option value="@nameof(EstadoConversacion.Abierta)">Abierta</option>
-                            <option value="@nameof(EstadoConversacion.Pendiente)">Pendiente</option>
-                            <option value="@nameof(EstadoConversacion.Resuelta)">Resuelta</option>
-                            <option value="@nameof(EstadoConversacion.Cerrada)">Cerrada</option>
-                        </CampoSelect>
-
-                        <CampoTexto Etiqueta="Mes" Type="month" Valor="@_mesFiltro" ValorChanged="async v => { _mesFiltro = v; await AplicarFiltrosAsync(); }" />
-
-                        <CampoSelect Etiqueta="Cliente" Valor="@_clienteIdFiltro" ValorChanged="async v => { _clienteIdFiltro = v; await AplicarFiltrosAsync(); }">
-                            <option value="">Todos los clientes</option>
-                            @foreach (var cliente in _clientesSelector)
-                            {
-                                <option value="@cliente.Id">@cliente.RazonSocial</option>
-                            }
-                        </CampoSelect>
-                    </div>
-                </details>
-            </div>
-
-            <div class="bandeja-lista">
-                @if (_errorCargaLista)
-                {
-                    <EstadoVacio Titulo="No pudimos cargar la bandeja" Descripcion="Intenta nuevamente en unos segundos.">
-                        <Accion>
-                            <Boton OnClick="CargarListaAsync">Reintentar</Boton>
-                        </Accion>
-                    </EstadoVacio>
-                }
-                else if (_cargandoLista)
-                {
-                    <EstadoCargando Filas="6" />
-                }
-                else if (_conversaciones.Count == 0)
-                {
-                    <EstadoVacio Titulo="No hay conversaciones" Descripcion="No encontramos conversaciones con estos filtros." />
-                }
-                else
-                {
-                    var triage = ConversacionesTriage();
-                    @if (triage.Count > 0)
+                <div class="bandeja-lista">
+                    @if (_errorCargaLista)
                     {
-                        <div class="bandeja-grupo">
-                            <button type="button" class="bandeja-grupo-cabecera" @onclick='() => AlternarGrupo("triage")'>
-                                <span>Sin cliente asignado (Triage)</span>
-                                <Badge Tono="TonoBadge.Info">@triage.Count</Badge>
-                            </button>
-                            @if (!GrupoColapsado("triage"))
-                            {
-                                <ul class="bandeja-grupo-filas">
-                                    @foreach (var conversacion in triage)
-                                    {
-                                        <FilaConversacion Conversacion="conversacion" Activa="@(conversacion.Id == _conversacionSeleccionadaId)" OnSeleccionar="SeleccionarConversacionAsync" />
-                                    }
-                                </ul>
-                            }
-                        </div>
+                        <EstadoVacio Titulo="No pudimos cargar la bandeja" Descripcion="Intenta nuevamente en unos segundos.">
+                            <Accion>
+                                <Boton OnClick="CargarListaAsync">Reintentar</Boton>
+                            </Accion>
+                        </EstadoVacio>
                     }
-
-                    @foreach (var grupo in GruposPorCliente())
+                    else if (_cargandoLista)
                     {
-                        var clave = grupo.Key.ToString();
-                        var nombreCliente = grupo.First().ClienteRazonSocial ?? "Cliente";
-                        <div class="bandeja-grupo">
-                            <button type="button" class="bandeja-grupo-cabecera" @onclick="() => AlternarGrupo(clave)">
-                                <span>@nombreCliente</span>
-                                <Badge>@grupo.Count()</Badge>
-                            </button>
-                            @if (!GrupoColapsado(clave))
-                            {
-                                <ul class="bandeja-grupo-filas">
-                                    @foreach (var conversacion in grupo.OrderByDescending(c => c.FechaUltimoMensajeUtc))
-                                    {
-                                        <FilaConversacion Conversacion="conversacion" Activa="@(conversacion.Id == _conversacionSeleccionadaId)" OnSeleccionar="SeleccionarConversacionAsync" />
-                                    }
-                                </ul>
-                            }
-                        </div>
+                        <EstadoCargando Filas="6" />
                     }
-
-                    @if (TotalPaginas > 1)
+                    else if (_conversaciones.Count == 0)
                     {
-                        <PaginadorSimple PaginaActual="_pagina" TotalPaginas="TotalPaginas" TotalElementos="_totalConversaciones"
-                                          Etiqueta="conversación(es)" PaginaActualChanged="CambiarPaginaBandejaAsync" />
+                        <EstadoVacio Titulo="No hay conversaciones" Descripcion="No encontramos conversaciones con estos filtros." />
                     }
-                }
-            </div>
+                    else
+                    {
+                        var triage = ConversacionesTriage();
+                        @if (triage.Count > 0)
+                        {
+                            <div class="bandeja-grupo">
+                                <button type="button" class="bandeja-grupo-cabecera" @onclick='() => AlternarGrupo("triage")'>
+                                    <span>Sin cliente asignado (Triage)</span>
+                                    <Badge Tono="TonoBadge.Info">@triage.Count</Badge>
+                                </button>
+                                @if (!GrupoColapsado("triage"))
+                                {
+                                    <ul class="bandeja-grupo-filas">
+                                        @foreach (var conversacion in triage)
+                                        {
+                                            <FilaConversacion Conversacion="conversacion" Activa="@(conversacion.Id == _conversacionSeleccionadaId)" OnSeleccionar="SeleccionarConversacionAsync" />
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        }
+
+                        @foreach (var grupo in GruposPorCliente())
+                        {
+                            var clave = grupo.Key.ToString();
+                            var nombreCliente = grupo.First().ClienteRazonSocial ?? "Cliente";
+                            <div class="bandeja-grupo">
+                                <button type="button" class="bandeja-grupo-cabecera" @onclick="() => AlternarGrupo(clave)">
+                                    <span>@nombreCliente</span>
+                                    <Badge>@grupo.Count()</Badge>
+                                </button>
+                                @if (!GrupoColapsado(clave))
+                                {
+                                    <ul class="bandeja-grupo-filas">
+                                        @foreach (var conversacion in grupo.OrderByDescending(c => c.FechaUltimoMensajeUtc))
+                                        {
+                                            <FilaConversacion Conversacion="conversacion" Activa="@(conversacion.Id == _conversacionSeleccionadaId)" OnSeleccionar="SeleccionarConversacionAsync" />
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        }
+
+                        @if (TotalPaginas > 1)
+                        {
+                            <PaginadorSimple PaginaActual="_pagina" TotalPaginas="TotalPaginas" TotalElementos="_totalConversaciones"
+                                              Etiqueta="conversación(es)" PaginaActualChanged="CambiarPaginaBandejaAsync" />
+                        }
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="bandeja-vista-personal-descripcion">
+                    Correo que llega a tu buzón personal de Microsoft 365, no al de ningún Cliente — notificaciones de
+                    plataformas externas a tu nombre, correo interno y correo que no reconocemos. Solo lectura: no hay
+                    Composer aquí, no hay ninguna gestión CAE que atender.
+                </p>
+
+                <div class="bandeja-lista">
+                    @if (_errorCargaLista)
+                    {
+                        <EstadoVacio Titulo="No pudimos cargar el buzón" Descripcion="Intenta nuevamente en unos segundos.">
+                            <Accion>
+                                <Boton OnClick="CargarBuzonPersonalAsync">Reintentar</Boton>
+                            </Accion>
+                        </EstadoVacio>
+                    }
+                    else if (_cargandoLista)
+                    {
+                        <EstadoCargando Filas="6" />
+                    }
+                    else if (_mensajesBuzonPersonal.Count == 0)
+                    {
+                        <EstadoVacio Titulo="Sin buzón personal conectado"
+                                     Descripcion="Pide a un administrador que conecte tu buzón personal desde Integraciones, o todavía no ha llegado ningún correo." />
+                    }
+                    else
+                    {
+                        <ul class="bandeja-grupo-filas">
+                            @foreach (var mensaje in _mensajesBuzonPersonal)
+                            {
+                                <FilaMensajeBuzonPersonal Mensaje="mensaje" Activa="@(mensaje.ConversacionId == _conversacionSeleccionadaId)" OnSeleccionar="SeleccionarConversacionAsync" />
+                            }
+                        </ul>
+                    }
+                </div>
+            }
         </aside>
 
         <section class="bandeja-columna bandeja-centro">
@@ -191,38 +244,41 @@
                     <div class="bandeja-centro-acciones">
                         <MedidorTiempoGestion @ref="_medidorTiempo" ConversacionId="_detalle.Id" />
 
-                        @if (_detalle.ClienteId is null)
+                        @if (_vista == "clientes")
                         {
-                            <CampoSelect Valor="@_clienteTriageSeleccionado" ValorChanged="v => _clienteTriageSeleccionado = v">
-                                <option value="">Asignar cliente…</option>
-                                @foreach (var cliente in _clientesSelector)
-                                {
-                                    <option value="@cliente.Id">@cliente.RazonSocial</option>
-                                }
-                            </CampoSelect>
-                            <Boton Tamano="TamanoBoton.Pequeno" Variante="VarianteBoton.Secundario"
-                                   Deshabilitado="string.IsNullOrEmpty(_clienteTriageSeleccionado)" Cargando="_asignandoCliente" OnClick="AsignarClienteTriageAsync">
-                                Asignar
-                            </Boton>
-                        }
-                        else
-                        {
-                            <CampoSelect Valor="@_ejecutivoSeleccionado" ValorChanged="CambiarEjecutivoAsync" Deshabilitado="_cambiandoEjecutivo">
-                                <option value="">Sin ejecutivo asignado</option>
-                                @foreach (var ejecutivo in _ejecutivosDisponibles)
-                                {
-                                    <option value="@ejecutivo.Id">@ejecutivo.NombreCompleto</option>
-                                }
-                            </CampoSelect>
-                        }
+                            @if (_detalle.ClienteId is null)
+                            {
+                                <CampoSelect Valor="@_clienteTriageSeleccionado" ValorChanged="v => _clienteTriageSeleccionado = v">
+                                    <option value="">Asignar cliente…</option>
+                                    @foreach (var cliente in _clientesSelector)
+                                    {
+                                        <option value="@cliente.Id">@cliente.RazonSocial</option>
+                                    }
+                                </CampoSelect>
+                                <Boton Tamano="TamanoBoton.Pequeno" Variante="VarianteBoton.Secundario"
+                                       Deshabilitado="string.IsNullOrEmpty(_clienteTriageSeleccionado)" Cargando="_asignandoCliente" OnClick="AsignarClienteTriageAsync">
+                                    Asignar
+                                </Boton>
+                            }
+                            else
+                            {
+                                <CampoSelect Valor="@_ejecutivoSeleccionado" ValorChanged="CambiarEjecutivoAsync" Deshabilitado="_cambiandoEjecutivo">
+                                    <option value="">Sin ejecutivo asignado</option>
+                                    @foreach (var ejecutivo in _ejecutivosDisponibles)
+                                    {
+                                        <option value="@ejecutivo.Id">@ejecutivo.NombreCompleto</option>
+                                    }
+                                </CampoSelect>
+                            }
 
-                        @if (_detalle.Estado is EstadoConversacion.Abierta or EstadoConversacion.Pendiente)
-                        {
-                            <Boton Tamano="TamanoBoton.Pequeno" Cargando="_cambiandoEstado" OnClick="() => CambiarEstadoAsync(EstadoConversacion.Resuelta)">Resolver</Boton>
-                        }
-                        else
-                        {
-                            <Boton Tamano="TamanoBoton.Pequeno" Variante="VarianteBoton.Secundario" Cargando="_cambiandoEstado" OnClick="() => CambiarEstadoAsync(EstadoConversacion.Abierta)">Reabrir</Boton>
+                            @if (_detalle.Estado is EstadoConversacion.Abierta or EstadoConversacion.Pendiente)
+                            {
+                                <Boton Tamano="TamanoBoton.Pequeno" Cargando="_cambiandoEstado" OnClick="() => CambiarEstadoAsync(EstadoConversacion.Resuelta)">Resolver</Boton>
+                            }
+                            else
+                            {
+                                <Boton Tamano="TamanoBoton.Pequeno" Variante="VarianteBoton.Secundario" Cargando="_cambiandoEstado" OnClick="() => CambiarEstadoAsync(EstadoConversacion.Abierta)">Reabrir</Boton>
+                            }
                         }
                     </div>
                 </div>
@@ -230,36 +286,43 @@
                 <UnifiedTimeline Mensajes="_detalle.Mensajes" Participantes="_detalle.Participantes" Eventos="_detalle.Eventos"
                                   OnActualizarDocumentoDesdeAdjunto="AbrirActualizarDocumentoAsync" OnConfirmarRuido="ConfirmarRuidoAsync" />
 
-                <ComposerBar Canal="_detalle.Canal" VentanaAbierta="VentanaAbierta" CierreVentanaLocal="@CierreVentanaLocal"
-                             Texto="@_textoRespuesta" TextoChanged="v => _textoRespuesta = v" Enviando="_enviando" OnEnviar="EnviarAsync"
-                             Macros="_macrosDisponibles" MacroSeleccionadaId="@_macroSeleccionadaId" OnAplicarMacro="AplicarMacro"
-                             Centros="_centrosClienteActivo" CentroFormatosSeleccionado="@_centroFormatosSeleccionado" OnCompartirFormatos="CompartirFormatosCentroAsync"
-                             AdjuntosPendientes="_adjuntosPendientes" ErrorAdjuntos="@_errorAdjuntos"
-                             OnArchivosSeleccionados="ManejarArchivosAdjuntosAsync" OnQuitarAdjunto="QuitarAdjuntoPendiente"
-                             EmailFallback="@_emailFallback" EmailFallbackChanged="v => _emailFallback = v" OnEnviarFallbackCorreo="EnviarFallbackCorreoAsync" />
-
-                @*
-                    "Pedir prioridad" del mockup (Parte XVI PROMPT 09), a nivel
-                    conversación — el comando ya existía y funcionaba desde
-                    Centro 360 (CentroWorkspacePanel), aquí solo se cablea al
-                    mismo Centro que el gestor ya eligió arriba para
-                    "Compartir formatos de centro": la conversación es de un
-                    Cliente, que puede tener varios Centros, así que hace
-                    falta que el gestor haya elegido uno antes de poder pedir
-                    prioridad sobre él.
-                *@
-                @if (!string.IsNullOrEmpty(_centroFormatosSeleccionado))
+                @if (_vista == "clientes")
                 {
-                    <div class="acordeon-asignaciones-cabecera">
-                        <Boton Variante="VarianteBoton.Fantasma" Tamano="TamanoBoton.Pequeno" OnClick="AbrirPedirPrioridadAsync">
-                            Pedir prioridad de validación
-                        </Boton>
-                    </div>
+                    <ComposerBar Canal="_detalle.Canal" VentanaAbierta="VentanaAbierta" CierreVentanaLocal="@CierreVentanaLocal"
+                                 Texto="@_textoRespuesta" TextoChanged="v => _textoRespuesta = v" Enviando="_enviando" OnEnviar="EnviarAsync"
+                                 Macros="_macrosDisponibles" MacroSeleccionadaId="@_macroSeleccionadaId" OnAplicarMacro="AplicarMacro"
+                                 Centros="_centrosClienteActivo" CentroFormatosSeleccionado="@_centroFormatosSeleccionado" OnCompartirFormatos="CompartirFormatosCentroAsync"
+                                 AdjuntosPendientes="_adjuntosPendientes" ErrorAdjuntos="@_errorAdjuntos"
+                                 OnArchivosSeleccionados="ManejarArchivosAdjuntosAsync" OnQuitarAdjunto="QuitarAdjuntoPendiente"
+                                 EmailFallback="@_emailFallback" EmailFallbackChanged="v => _emailFallback = v" OnEnviarFallbackCorreo="EnviarFallbackCorreoAsync" />
+
+                    @*
+                        "Pedir prioridad" del mockup (Parte XVI PROMPT 09), a nivel
+                        conversación — el comando ya existía y funcionaba desde
+                        Centro 360 (CentroWorkspacePanel), aquí solo se cablea al
+                        mismo Centro que el gestor ya eligió arriba para
+                        "Compartir formatos de centro": la conversación es de un
+                        Cliente, que puede tener varios Centros, así que hace
+                        falta que el gestor haya elegido uno antes de poder pedir
+                        prioridad sobre él.
+                    *@
+                    @if (!string.IsNullOrEmpty(_centroFormatosSeleccionado))
+                    {
+                        <div class="acordeon-asignaciones-cabecera">
+                            <Boton Variante="VarianteBoton.Fantasma" Tamano="TamanoBoton.Pequeno" OnClick="AbrirPedirPrioridadAsync">
+                                Pedir prioridad de validación
+                            </Boton>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="bandeja-vista-personal-solo-lectura">Vista de solo lectura — no hay ninguna gestión CAE que atender aquí.</p>
                 }
             }
         </section>
 
-        @if (_clienteActivo is not null || HayAccionesPendientes)
+        @if (_vista == "clientes" && (_clienteActivo is not null || HayAccionesPendientes))
         {
             <aside class="bandeja-columna bandeja-cliente">
                 <AccionCenter SugerenciasVisita="SugerenciasVisitaPendientes" SugerenciasGestion="SugerenciasGestionPendientes"
