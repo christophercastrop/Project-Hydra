@@ -65,6 +65,7 @@ public partial class Bandeja : ComponentBase
         (nameof(TipoItemBandeja.Urgente), "Urgente", Contador(TipoItemBandeja.Urgente)),
         (nameof(TipoItemBandeja.RevisionIa), "Revisión IA", Contador(TipoItemBandeja.RevisionIa)),
         (nameof(TipoItemBandeja.DeteccionPendiente), "Detección de personal", Contador(TipoItemBandeja.DeteccionPendiente)),
+        (nameof(TipoItemBandeja.PlataformaPendiente), "Pendiente por plataforma", Contador(TipoItemBandeja.PlataformaPendiente)),
     ];
 
     protected override Task OnInitializedAsync() => CargarAsync();

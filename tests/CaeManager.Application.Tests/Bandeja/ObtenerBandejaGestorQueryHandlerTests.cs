@@ -2,6 +2,7 @@ using CaeManager.Application.Alertas.Queries.ObtenerAlertas;
 using CaeManager.Application.Bandeja.Queries.ObtenerBandejaGestor;
 using CaeManager.Application.Centros.Queries.ObtenerDocumentacionBloqueantePendiente;
 using CaeManager.Application.Comunicaciones.Queries.ObtenerSugerenciasVisitaCorreoPendientes;
+using CaeManager.Application.Documentos.Queries.ObtenerAcreditacionesPorProveedor;
 using CaeManager.Application.Documentos.Queries.ObtenerRevisionesIaPendientes;
 using CaeManager.Application.Trabajadores.Queries.ObtenerDeteccionesPendientes;
 using CaeManager.Application.Visitas.Queries.ObtenerVisitas;
@@ -51,15 +52,27 @@ public class ObtenerBandejaGestorQueryHandlerTests
         Id: Guid.NewGuid(), EmpresaId: Guid.NewGuid(), EmpresaRazonSocial: "Empresa Centro S.L.",
         Tipo: tipo, NombreCompleto: "Marta Ruiz", CreadaEnUtc: DateTime.UtcNow);
 
+    private static ProveedorAcreditacionesDto PendientePlataforma(
+        EstadoAcreditacion estado = EstadoAcreditacion.PendienteDeSubir, string proveedorNombre = "Dokify") => new(
+        ProveedorPlataformaCaeId: Guid.NewGuid(), ProveedorNombre: proveedorNombre, ProveedorCodigo: "dokify",
+        Clientes: [new ClienteAcreditacionesDto(
+            ClienteId: Guid.NewGuid(), ClienteNombre: "Cliente Norte S.A.",
+            Documentos: [new AcreditacionDrillDownDto(
+                AcreditacionId: Guid.NewGuid(), DocumentoId: Guid.NewGuid(), PropietarioNombre: "Iker Etxeberria",
+                TipoDocumentoNombre: "Formación 60h", Estado: estado, UltimoMotivoRechazo: null,
+                TrabajadorId: Guid.NewGuid())]) ]);
+
     private static IReadOnlyList<ItemBandejaDto> Fusionar(
         IReadOnlyList<AlertaDto>? alertas = null,
         IReadOnlyList<RevisionIaDocumentoDto>? revisiones = null,
         IReadOnlyList<DocumentacionBloqueantePendienteDto>? requisitos = null,
         IReadOnlyList<VisitaListaDto>? visitasUrgentes = null,
         IReadOnlyList<SugerenciaVisitaCorreoPendienteDto>? sugerenciasVisita = null,
-        IReadOnlyList<DeteccionPendienteDto>? detecciones = null) =>
+        IReadOnlyList<DeteccionPendienteDto>? detecciones = null,
+        IReadOnlyList<ProveedorAcreditacionesDto>? pendientesPlataforma = null) =>
         ObtenerBandejaGestorQueryHandler.Fusionar(
             alertas ?? [], revisiones ?? [], requisitos ?? [], visitasUrgentes ?? [], sugerenciasVisita ?? [], detecciones ?? [],
+            pendientesPlataforma ?? [],
             Hoy, HorasAvisoVisita, HorasCriticasVisita);
 
     [Fact]
@@ -105,6 +118,35 @@ public class ObtenerBandejaGestorQueryHandlerTests
         item.Titulo.Should().Be("Baja detectada");
         item.Subtitulo.Should().Be("Empresa Centro S.L. — Marta Ruiz");
         item.EmpresaId.Should().Be(deteccion.EmpresaId);
+    }
+
+    [Fact]
+    public void Mapea_un_pendiente_de_plataforma_con_su_proveedor_y_cliente()
+    {
+        var pendiente = PendientePlataforma();
+
+        var resultado = Fusionar(pendientesPlataforma: [pendiente]);
+
+        var item = resultado.Should().ContainSingle().Subject;
+        item.Tipo.Should().Be(TipoItemBandeja.PlataformaPendiente);
+        item.Titulo.Should().Be("Formación 60h");
+        item.Subtitulo.Should().Be("Iker Etxeberria");
+        item.ClienteNombre.Should().Be("Cliente Norte S.A.");
+        item.ProveedorNombre.Should().Be("Dokify");
+        item.Fecha.Should().BeNull();
+    }
+
+    [Fact]
+    public void Una_acreditacion_rechazada_no_entra_en_la_bandeja()
+    {
+        // Rechazada ya tiene su propio sitio (Documentos > Plataforma, con el
+        // motivo del rechazo) — mezclarla aquí con "nunca se subió" perdería
+        // esa distinción.
+        var rechazada = PendientePlataforma(estado: EstadoAcreditacion.Rechazada);
+
+        var resultado = Fusionar(pendientesPlataforma: [rechazada]);
+
+        resultado.Should().BeEmpty();
     }
 
     [Fact]

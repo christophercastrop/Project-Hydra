@@ -19,6 +19,8 @@ public static class TipoItemBandejaUi
         TipoItemBandeja.Urgente => TonoBadge.Advertencia,
         TipoItemBandeja.RevisionIa => TonoBadge.Advertencia,
         TipoItemBandeja.DeteccionPendiente => TonoBadge.Advertencia,
+        // Mismo tono que ya usa PlataformaTab.razor para EstadoAcreditacion.PendienteDeSubir.
+        TipoItemBandeja.PlataformaPendiente => TonoBadge.Advertencia,
         _ => TonoBadge.Neutro
     };
 
@@ -32,10 +34,20 @@ public static class TipoItemBandejaUi
         TipoItemBandeja.Urgente => "Urgente",
         TipoItemBandeja.RevisionIa => "Revisión IA",
         TipoItemBandeja.DeteccionPendiente => "Detección de personal",
+        // No "Falta": la documentación existe y está al día en Talveg, solo
+        // falta replicarla en la plataforma del cliente — un badge "Falta"
+        // sugeriría (incorrectamente) que hay que reclamarla a alguien.
+        TipoItemBandeja.PlataformaPendiente => "Pendiente",
         _ => "—"
     };
 
-    public static string TextoAccion(TipoItemBandeja tipo) => tipo switch
+    /// <summary>
+    /// Recibe el ítem completo, no solo el tipo — PlataformaPendiente necesita
+    /// el nombre real de la plataforma ("Subir a Dokify"), que es un dato del
+    /// ítem (ItemBandejaDto.ProveedorNombre), no un texto fijo por tipo como
+    /// el resto de acciones.
+    /// </summary>
+    public static string TextoAccion(ItemBandejaDto item) => item.Tipo switch
     {
         TipoItemBandeja.Faltante => "Subir documento",
         TipoItemBandeja.RevisionIa => "Revisar",
@@ -43,6 +55,7 @@ public static class TipoItemBandejaUi
         TipoItemBandeja.SugerenciaVisitaUrgente => "Confirmar visita",
         TipoItemBandeja.VisitaUrgente => "Ver visita",
         TipoItemBandeja.DeteccionPendiente => "Revisar detección",
+        TipoItemBandeja.PlataformaPendiente => $"Subir a {item.ProveedorNombre}",
         _ => "Gestionar"
     };
 }

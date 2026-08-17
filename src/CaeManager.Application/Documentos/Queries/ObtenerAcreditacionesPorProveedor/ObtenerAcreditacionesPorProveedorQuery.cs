@@ -33,7 +33,8 @@ public record ClienteAcreditacionesDto(Guid ClienteId, string ClienteNombre, IRe
 
 public record AcreditacionDrillDownDto(
     Guid AcreditacionId, Guid DocumentoId, string PropietarioNombre, string TipoDocumentoNombre,
-    EstadoAcreditacion Estado, string? UltimoMotivoRechazo);
+    EstadoAcreditacion Estado, string? UltimoMotivoRechazo,
+    Guid? TrabajadorId = null, Guid? EmpresaId = null, Guid? CentroId = null, Guid? TipoDocumentoId = null);
 
 public class ObtenerAcreditacionesPorProveedorQueryHandler(
     IDocumentosQueryContext documentosContext, ICentrosQueryContext centrosContext,
@@ -65,9 +66,11 @@ public class ObtenerAcreditacionesPorProveedorQueryHandler(
                 acreditacion.DocumentoId,
                 acreditacion.Estado,
                 ProveedorId = canal.ProveedorPlataformaCaeId,
+                CentroId = centro.Id,
                 centro.ClienteId,
                 documento.TrabajadorId,
                 documento.EmpresaId,
+                documento.TipoDocumentoId,
                 TipoDocumentoNombre = tipoDocumento.Nombre
             })
             .ToListAsync(cancellationToken);
@@ -120,7 +123,8 @@ public class ObtenerAcreditacionesPorProveedorQueryHandler(
                         clientes.GetValueOrDefault(g.Key, "—"),
                         g.Select(f => new AcreditacionDrillDownDto(
                                 f.Id, f.DocumentoId, PropietarioNombre(f.TrabajadorId, f.EmpresaId), f.TipoDocumentoNombre,
-                                f.Estado, motivosPorAcreditacion.GetValueOrDefault(f.Id)))
+                                f.Estado, motivosPorAcreditacion.GetValueOrDefault(f.Id),
+                                f.TrabajadorId, f.EmpresaId, f.CentroId, f.TipoDocumentoId))
                             .OrderBy(d => d.PropietarioNombre)
                             .ToList()))
                     .OrderBy(c => c.ClienteNombre)

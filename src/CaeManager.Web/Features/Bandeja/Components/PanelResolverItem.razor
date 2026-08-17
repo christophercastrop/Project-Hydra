@@ -20,7 +20,7 @@
         <TextoFechaCopiable Fecha="Item.Fecha">@(Item.Fecha?.ToString("dd/MM/yyyy") ?? "—")</TextoFechaCopiable>
     </div>
     <Boton Variante="VarianteBoton.Fantasma" Tamano="TamanoBoton.Pequeno" OnClick="AbrirAsync">
-        @TipoItemBandejaUi.TextoAccion(Item.Tipo)
+        @TipoItemBandejaUi.TextoAccion(Item)
     </Boton>
 </div>
 

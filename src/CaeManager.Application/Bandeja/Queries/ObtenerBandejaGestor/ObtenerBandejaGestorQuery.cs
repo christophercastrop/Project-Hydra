@@ -2,6 +2,7 @@ using CaeManager.Application.Alertas.Queries.ObtenerAlertas;
 using CaeManager.Application.Centros.Queries.ObtenerDocumentacionBloqueantePendiente;
 using CaeManager.Application.Comunicaciones.Queries.ObtenerSugerenciasVisitaCorreoPendientes;
 using CaeManager.Application.Configuracion;
+using CaeManager.Application.Documentos.Queries.ObtenerAcreditacionesPorProveedor;
 using CaeManager.Application.Documentos.Queries.ObtenerRevisionesIaPendientes;
 using CaeManager.Application.Trabajadores.Queries.ObtenerDeteccionesPendientes;
 using CaeManager.Application.Visitas.Queries.ObtenerVisitas;
@@ -47,7 +48,17 @@ public enum TipoItemBandeja
     VisitaUrgente,
     Urgente,
     RevisionIa,
-    DeteccionPendiente
+    DeteccionPendiente,
+    /// <summary>
+    /// La documentación está al día en Talveg pero no se ha subido/actualizado
+    /// todavía en la plataforma del cliente (Dokify, Nalanda...) —
+    /// <see cref="Documentos.Queries.ObtenerAcreditacionesPorProveedor.ObtenerAcreditacionesPorProveedorQuery"/>,
+    /// solo <c>EstadoAcreditacion.PendienteDeSubir</c> (Rechazada es una
+    /// situación distinta — ya corregida antes, el portal la devolvió — no
+    /// "falta subirla por primera vez"). Distinto de Faltante: aquí no hay
+    /// nada que reclamar a nadie, solo subir un archivo que Talveg ya tiene.
+    /// </summary>
+    PlataformaPendiente
 }
 
 /// <param name="CreadaEnUtc">
@@ -77,6 +88,12 @@ public enum TipoItemBandeja
 /// "Requiere atención" (GrupoCola): el nombre visible del segundo nivel, no
 /// solo la clave de agrupación.
 /// </param>
+/// <param name="ProveedorNombre">
+/// Solo PlataformaPendiente — nombre de la plataforma del cliente (Dokify,
+/// Nalanda...) a la que falta subir el documento. La acción primaria de este
+/// tipo necesita el nombre concreto ("Subir a Dokify"), no un texto genérico
+/// como el resto de tipos — ver TipoItemBandejaUi.TextoAccion.
+/// </param>
 public record ItemBandejaDto(
     string Id,
     TipoItemBandeja Tipo,
@@ -94,7 +111,8 @@ public record ItemBandejaDto(
     Guid? ClienteId = null,
     string? ClienteNombre = null,
     string? EmpresaNombre = null,
-    string? TrabajadorNombre = null);
+    string? TrabajadorNombre = null,
+    string? ProveedorNombre = null);
 
 public class ObtenerBandejaGestorQueryHandler(IMediator mediator, IConfiguracionQueryContext configuracionContext)
     : IRequestHandler<ObtenerBandejaGestorQuery, IReadOnlyList<ItemBandejaDto>>
@@ -109,12 +127,13 @@ public class ObtenerBandejaGestorQueryHandler(IMediator mediator, IConfiguracion
             cancellationToken);
         var sugerenciasVisita = await mediator.Send(new ObtenerSugerenciasVisitaCorreoPendientesQuery(), cancellationToken);
         var detecciones = await mediator.Send(new ObtenerDeteccionesPendientesQuery(), cancellationToken);
+        var pendientesPlataforma = await mediator.Send(new ObtenerAcreditacionesPorProveedorQuery(), cancellationToken);
 
         var parametros = await configuracionContext.ParametrosSistema.SingleAsync(cancellationToken);
         var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
 
         return Fusionar(
-            alertas, revisiones, requisitos, visitasUrgentes.Elementos, sugerenciasVisita, detecciones,
+            alertas, revisiones, requisitos, visitasUrgentes.Elementos, sugerenciasVisita, detecciones, pendientesPlataforma,
             hoy, parametros.HorasAvisoVisita, parametros.HorasCriticasVisita);
     }
 
@@ -131,6 +150,7 @@ public class ObtenerBandejaGestorQueryHandler(IMediator mediator, IConfiguracion
         IReadOnlyList<VisitaListaDto> visitasUrgentes,
         IReadOnlyList<SugerenciaVisitaCorreoPendienteDto> sugerenciasVisita,
         IReadOnlyList<DeteccionPendienteDto> detecciones,
+        IReadOnlyList<ProveedorAcreditacionesDto> pendientesPlataforma,
         DateOnly hoy,
         int horasAvisoVisita,
         int horasCriticasVisita)
@@ -250,6 +270,33 @@ public class ObtenerBandejaGestorQueryHandler(IMediator mediator, IConfiguracion
             EmpresaId: d.EmpresaId,
             CreadaEnUtc: d.CreadaEnUtc,
             EmpresaNombre: d.EmpresaRazonSocial)));
+
+        // Solo PendienteDeSubir: la documentación está al día en Talveg, lo
+        // único que falta es replicarla en la plataforma del cliente — no hay
+        // nada que reclamar. Rechazada queda fuera a propósito: el portal ya
+        // la evaluó y la devolvió, es una situación distinta ("corregir y
+        // volver a subir", con el motivo real del rechazo) que ya tiene su
+        // sitio en /documentos, pestaña Plataforma — meterla aquí con el
+        // mismo tratamiento que "nunca se subió" ocultaría el motivo del
+        // rechazo, que es la parte que de verdad importa gestionar ahí.
+        items.AddRange(pendientesPlataforma.SelectMany(proveedor => proveedor.Clientes.SelectMany(cliente => cliente.Documentos
+            .Where(d => d.Estado == EstadoAcreditacion.PendienteDeSubir)
+            .Select(d => new ItemBandejaDto(
+                Id: $"plataforma-{d.AcreditacionId}",
+                Tipo: TipoItemBandeja.PlataformaPendiente,
+                Titulo: d.TipoDocumentoNombre,
+                Subtitulo: d.PropietarioNombre,
+                Fecha: null,
+                TrabajadorId: d.TrabajadorId,
+                CentroId: d.CentroId,
+                DocumentoId: d.DocumentoId,
+                TipoDocumentoId: d.TipoDocumentoId,
+                RequisitoId: null,
+                ClienteId: cliente.ClienteId,
+                ClienteNombre: cliente.ClienteNombre,
+                EmpresaId: d.EmpresaId,
+                TrabajadorNombre: d.TrabajadorId is not null ? d.PropietarioNombre : null,
+                ProveedorNombre: proveedor.ProveedorNombre)))));
 
         // Una sugerencia sin confirmar pesa más que cualquier otra cosa: sin
         // confirmarla no hay ni Visita ni documentación que verificar. Entre

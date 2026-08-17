@@ -25,6 +25,11 @@ public static class AccionesBandeja
         // ya filtrada por urgencia es lo más cercano disponible hoy.
         TipoItemBandeja.VisitaUrgente => Navegar(navigationManager, "/visitas"),
         TipoItemBandeja.DeteccionPendiente => Navegar(navigationManager, $"/empresas/{item.EmpresaId}/deteccion-trabajadores"),
+        // La acción real (MarcarAcreditacionSubidaCommand) vive en la pestaña
+        // Plataforma de /documentos, no en DocumentoWorkspacePanel (el
+        // fallback genérico de abajo) — ese panel no tiene ningún control de
+        // acreditación por plataforma.
+        TipoItemBandeja.PlataformaPendiente => Navegar(navigationManager, "/documentos?pestana=plataforma"),
         _ => Navegar(navigationManager, item.DocumentoId is { } documentoId
             ? $"/documentos?documentoId={documentoId}"
             : $"/documentos?trabajadorId={item.TrabajadorId}&tipoDocumentoId={item.TipoDocumentoId}")

@@ -75,7 +75,7 @@
                                 <span class="grupo-cola-fila-compacta-titulo">@TituloBajoTrabajador(item)</span>
                                 <span class="grupo-cola-fila-compacta-fecha">@(item.Fecha?.ToString("dd/MM") is { } f ? $"Vence {f}" : "—")</span>
                                 <Badge Tono="TipoItemBandejaUi.Tono(item.Tipo)">@TipoItemBandejaUi.Texto(item.Tipo)</Badge>
-                                <a href="#" class="grupo-cola-fila-compacta-accion" @onclick="() => AbrirAsync(item)" @onclick:preventDefault>@TipoItemBandejaUi.TextoAccion(item.Tipo)</a>
+                                <a href="#" class="grupo-cola-fila-compacta-accion" @onclick="() => AbrirAsync(item)" @onclick:preventDefault>@TipoItemBandejaUi.TextoAccion(item)</a>
                             </div>
                         }
                         else
