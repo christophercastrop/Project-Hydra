@@ -189,6 +189,17 @@ public class ObtenerBandejaGestorQueryHandlerTests
         item.CentroId.Should().Be(requisito.CentroId);
         item.TrabajadorId.Should().Be(requisito.TrabajadorId);
         item.TipoDocumentoId.Should().Be(requisito.TipoDocumentoId);
+        item.EsAltaNueva.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Propaga_EsAltaNueva_del_requisito_al_item_de_bandeja()
+    {
+        var requisito = Requisito() with { EsAltaNueva = true };
+
+        var resultado = Fusionar(requisitos: [requisito]);
+
+        resultado.Should().ContainSingle().Subject.EsAltaNueva.Should().BeTrue();
     }
 
     [Fact]

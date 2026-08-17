@@ -26,11 +26,21 @@ public record ObtenerDocumentacionBloqueantePendienteQuery : IRequest<IReadOnlyL
 
 /// <param name="ClienteId">Cliente del Centro — alimenta la agrupación "por situación" del rediseño de Inicio (hallazgo P-03 de la auditoría de producto 2026-08-16). El Centro ya es exacto aquí, así que no hace falta ningún criterio de desambiguación.</param>
 /// <param name="EmpresaId">Empresa del Trabajador — sub-agrupación Empresa→Trabajador de "Requiere atención" en vocabulario Consultora (GrupoCola).</param>
+/// <param name="EsAltaNueva">
+/// True cuando el Trabajador no tiene NINGÚN documento vigente de los tipos
+/// que bloquean acceso en este Centro — nunca llegó a completar el alta, no
+/// es que se le haya caducado uno. Señal sin umbral (decisión de producto
+/// 2026-08-16): no depende de FechaAlta/CreadoEnUtc, solo de si ya hay algo
+/// vigente o no. Distingue "sigue de alta" (visita tradicional, algo ya
+/// vigente) de "nunca llegó a entrar" (alta nueva) para dar un tratamiento de
+/// UI distinto — ver TipoItemBandejaUi.
+/// </param>
 public record DocumentacionBloqueantePendienteDto(
     Guid CentroId, string CentroNombre, Guid TrabajadorId, string TrabajadorNombre,
     Guid TipoDocumentoId, string TipoDocumentoNombre,
     Guid? ClienteId = null, string? ClienteNombre = null,
-    Guid? EmpresaId = null, string? EmpresaNombre = null);
+    Guid? EmpresaId = null, string? EmpresaNombre = null,
+    bool EsAltaNueva = false);
 
 public class ObtenerDocumentacionBloqueantePendienteQueryHandler(
     ICentrosQueryContext centrosContext,
@@ -116,6 +126,10 @@ public class ObtenerDocumentacionBloqueantePendienteQueryHandler(
             .Select(d => (d.TrabajadorId, d.TipoDocumentoId))
             .ToHashSet();
 
+        var tiposBloqueantesPorCentro = filasBloqueantes
+            .GroupBy(f => f.CentroId)
+            .ToDictionary(g => g.Key, g => g.Select(f => f.TipoDocumentoId).ToHashSet());
+
         var pendientes = new List<DocumentacionBloqueantePendienteDto>();
 
         foreach (var fila in filasBloqueantes)
@@ -132,12 +146,15 @@ public class ObtenerDocumentacionBloqueantePendienteQueryHandler(
                 var empresaNombre = asignacion.EmpresaId is { } empresaId && nombresPorEmpresa.TryGetValue(empresaId, out var nombreEmpresa)
                     ? nombreEmpresa
                     : null;
+                var esAltaNueva = !tiposBloqueantesPorCentro[fila.CentroId]
+                    .Any(tipoId => parejasConDocumentoVigente.Contains((asignacion.TrabajadorId, tipoId)));
 
                 pendientes.Add(new DocumentacionBloqueantePendienteDto(
                     fila.CentroId, centroNombre, asignacion.TrabajadorId, asignacion.TrabajadorNombre,
                     fila.TipoDocumentoId, tipoNombre,
                     ClienteId: cliente.Item1, ClienteNombre: cliente.Item2,
-                    EmpresaId: asignacion.EmpresaId, EmpresaNombre: empresaNombre));
+                    EmpresaId: asignacion.EmpresaId, EmpresaNombre: empresaNombre,
+                    EsAltaNueva: esAltaNueva));
             }
         }
 

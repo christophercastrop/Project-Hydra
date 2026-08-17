@@ -94,6 +94,11 @@ public enum TipoItemBandeja
 /// tipo necesita el nombre concreto ("Subir a Dokify"), no un texto genérico
 /// como el resto de tipos — ver TipoItemBandejaUi.TextoAccion.
 /// </param>
+/// <param name="EsAltaNueva">
+/// Solo RequisitoPendiente — ver DocumentacionBloqueantePendienteDto.EsAltaNueva.
+/// Cambia el badge/acción (TipoItemBandejaUi) para no alarmar como "bloqueo"
+/// lo que en realidad es una alta que todavía no se ha completado.
+/// </param>
 public record ItemBandejaDto(
     string Id,
     TipoItemBandeja Tipo,
@@ -112,7 +117,8 @@ public record ItemBandejaDto(
     string? ClienteNombre = null,
     string? EmpresaNombre = null,
     string? TrabajadorNombre = null,
-    string? ProveedorNombre = null);
+    string? ProveedorNombre = null,
+    bool EsAltaNueva = false);
 
 public class ObtenerBandejaGestorQueryHandler(IMediator mediator, IConfiguracionQueryContext configuracionContext)
     : IRequestHandler<ObtenerBandejaGestorQuery, IReadOnlyList<ItemBandejaDto>>
@@ -214,7 +220,8 @@ public class ObtenerBandejaGestorQueryHandler(IMediator mediator, IConfiguracion
             ClienteNombre: rq.ClienteNombre,
             EmpresaId: rq.EmpresaId,
             EmpresaNombre: rq.EmpresaNombre,
-            TrabajadorNombre: rq.TrabajadorNombre)));
+            TrabajadorNombre: rq.TrabajadorNombre,
+            EsAltaNueva: rq.EsAltaNueva)));
 
         items.AddRange(visitasUrgentes
             .Where(v => v.NivelUrgencia is NivelUrgenciaVisita.Urgente or NivelUrgenciaVisita.Critica)

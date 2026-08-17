@@ -74,7 +74,7 @@
                             <div class="grupo-cola-fila-compacta">
                                 <span class="grupo-cola-fila-compacta-titulo">@TituloBajoTrabajador(item)</span>
                                 <span class="grupo-cola-fila-compacta-fecha">@(item.Fecha?.ToString("dd/MM") is { } f ? $"Vence {f}" : "—")</span>
-                                <Badge Tono="TipoItemBandejaUi.Tono(item.Tipo)">@TipoItemBandejaUi.Texto(item.Tipo)</Badge>
+                                <Badge Tono="TipoItemBandejaUi.Tono(item)">@TipoItemBandejaUi.Texto(item)</Badge>
                                 <a href="#" class="grupo-cola-fila-compacta-accion" @onclick="() => AbrirAsync(item)" @onclick:preventDefault>@TipoItemBandejaUi.TextoAccion(item)</a>
                             </div>
                         }
@@ -193,7 +193,7 @@
     /// <summary>Un badge de recuento por cada tono de severidad presente en el grupo — reutiliza TipoItemBandejaUi, mismo vocabulario que cada PanelResolverItem individual. Conserva los items del tono para que la VentanaContexto pueda desglosarlos (DDL-033).</summary>
     private IEnumerable<(TonoBadge Tono, string Etiqueta, int Cantidad, IReadOnlyList<ItemBandejaDto> Items)> Recuentos =>
         Grupo.Items
-            .GroupBy(i => TipoItemBandejaUi.Tono(i.Tipo))
+            .GroupBy(i => TipoItemBandejaUi.Tono(i))
             .Select(g => (Tono: g.Key, Etiqueta: EtiquetaTono(g.Key), Cantidad: g.Count(), Items: (IReadOnlyList<ItemBandejaDto>)g.ToList()))
             .OrderByDescending(r => r.Tono == TonoBadge.Peligro)
             .ThenByDescending(r => r.Cantidad);
