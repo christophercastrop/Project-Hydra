@@ -43,8 +43,13 @@
     gap: var(--space-1);
 }
 
+/* 16px/24px, no --font-body-md (14px/20px): el título de grupo es el
+   elemento con más peso visual de la fila (mockup Inicio TALVEG), un paso
+   por encima del texto de cuerpo normal — el font-weight:600 solo no basta
+   para leerse "grande" a 14px. */
 .grupo-cola-titulo {
-    font: var(--font-body-md);
+    font-size: 1rem;
+    line-height: 1.5rem;
     font-weight: 600;
     color: var(--color-text);
 }
@@ -62,7 +67,13 @@
     flex-wrap: wrap;
 }
 
+/* background: mockup Inicio TALVEG — el área expandida es una isla gris
+   (--color-surface-subtle, el mismo #F1F5F7 del propio .dc.html), no el
+   blanco de la tarjeta que la contiene; sin esto, el hueco entre filas se
+   veía como un espacio en blanco desproporcionado en vez de una zona
+   agrupada visualmente distinta. */
 .grupo-cola-contenido {
+    background: var(--color-surface-subtle);
     padding: 0 var(--space-4) var(--space-3);
     display: flex;
     flex-direction: column;

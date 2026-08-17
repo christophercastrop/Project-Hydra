@@ -43,7 +43,13 @@
 
         @if (_mostrarRequiereAtencion && _bandejaAgrupada is { } bandeja)
         {
-            <h2 class="dashboard-subtitulo">Requiere atención</h2>
+            <div class="dashboard-cabecera-seccion">
+                <h2 class="dashboard-subtitulo dashboard-subtitulo-en-linea">Requiere atención</h2>
+                @if (SubtituloRequiereAtencion is { } subtitulo)
+                {
+                    <span class="dashboard-cabecera-seccion-cifra">@subtitulo</span>
+                }
+            </div>
             @if (bandeja.Grupos.Count == 0 && bandeja.SinGrupo.Count == 0)
             {
                 @* Cierre verificado (DDL-071): "nada pendiente" solo tranquiliza si dice
@@ -52,7 +58,7 @@
             }
             else
             {
-                <div class="lista-bandeja">
+                <div class="lista-bandeja dashboard-lista-unificada">
                     @for (var i = 0; i < Math.Min(bandeja.Grupos.Count, MaximoGruposAtencion); i++)
                     {
                         <GrupoCola Grupo="bandeja.Grupos[i]" ExpandidaPorDefecto="@(i == 0 && bandeja.Grupos[i].BloqueaAcceso)" Compacto="true" AgruparPorEmpresa="AgruparPorEmpresa" />

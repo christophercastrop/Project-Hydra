@@ -34,6 +34,38 @@
     margin-top: 0;
 }
 
+/*
+  Cabecera de sección con cifra de resumen a la derecha (mockup Inicio
+  TALVEG: attentionSubtitle junto a "Requiere atención", "Última
+  actualización" junto a "Pendiente por plataforma") — el <h2> pierde su
+  propio margen vertical (dashboard-subtitulo-en-linea) porque lo lleva
+  ahora el contenedor, para que la cifra quede alineada a la línea base del
+  título en vez de a su borde superior.
+*/
+.dashboard-cabecera-seccion {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin: var(--space-8) 0 var(--space-3);
+}
+
+.dashboard-cabecera-seccion:first-child {
+    margin-top: 0;
+}
+
+.dashboard-subtitulo-en-linea {
+    margin: 0;
+}
+
+.dashboard-cabecera-seccion-cifra {
+    font-size: 0.8125rem;
+    line-height: 1rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
 .rejilla-kpis-criticos {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -215,6 +247,26 @@
 
 .dashboard-lista-unificada .fila-plataforma:first-child,
 .dashboard-lista-unificada .dashboard-sin-respuesta-fila:first-child {
+    border-top: 0;
+}
+
+/*
+  "Requiere atención" (mockup Inicio TALVEG y Mi trabajo TALVEG): los
+  grupos son filas de UN mismo contenedor, separadas por border-top —
+  GrupoCola.razor.css los dibuja como tarjetas individuales con hueco entre
+  ellas porque esa es su forma por defecto fuera de aquí; dentro de
+  .dashboard-lista-unificada se despoja de su propio marco y pasa a
+  comportarse como una fila más, igual que ya hacen fila-plataforma y
+  dashboard-sin-respuesta-fila arriba.
+*/
+.dashboard-lista-unificada .grupo-cola {
+    border: 0;
+    border-radius: 0;
+    margin-bottom: 0;
+    border-top: var(--border-default);
+}
+
+.dashboard-lista-unificada .grupo-cola:first-child {
     border-top: 0;
 }
 

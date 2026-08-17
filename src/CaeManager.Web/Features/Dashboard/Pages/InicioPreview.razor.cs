@@ -182,6 +182,23 @@ public partial class InicioPreview : ComponentBase
             .Distinct()
             .Count();
 
+    /// <summary>"5 grupos · 2 bloquean acceso" (mockup Inicio TALVEG, attentionSubtitle) — mismos Grupos ya cargados, sin query nueva.</summary>
+    private string? SubtituloRequiereAtencion
+    {
+        get
+        {
+            if (_bandejaAgrupada is not { Grupos.Count: > 0 } bandeja) return null;
+
+            var totalGrupos = bandeja.Grupos.Count;
+            var bloquean = bandeja.Grupos.Count(g => g.BloqueaAcceso);
+            var textoGrupos = totalGrupos == 1 ? "1 grupo" : $"{totalGrupos} grupos";
+
+            return bloquean == 0
+                ? textoGrupos
+                : $"{textoGrupos} · {(bloquean == 1 ? "1 bloquea acceso" : $"{bloquean} bloquean acceso")}";
+        }
+    }
+
     private string TextoCierreAtencion =>
         _proximoVencimiento is { } proximo
             ? $"Nada pendiente ahora mismo. Próximo vencimiento: {proximo.TipoDocumentoNombre} de {proximo.TrabajadorNombre}, el {proximo.FechaVencimiento:dd/MM/yyyy} ({TextoDias(proximo.DiasRestantes)})."
