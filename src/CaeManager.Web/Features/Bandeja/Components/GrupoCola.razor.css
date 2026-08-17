@@ -131,3 +131,7 @@
     font: var(--font-label-md);
     font-size: 0.8125rem;
 }
+
+.grupo-cola-truncado {
+    padding: var(--space-2) 0 var(--space-1) var(--space-6);
+}

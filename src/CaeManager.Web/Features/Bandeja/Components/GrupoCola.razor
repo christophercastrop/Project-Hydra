@@ -61,7 +61,7 @@
                 {
                     <div class="grupo-cola-subcabecera grupo-cola-subcabecera-empresa">@empresa.EmpresaNombre</div>
                 }
-                @foreach (var trabajador in empresa.Trabajadores)
+                @foreach (var trabajador in empresa.Trabajadores.Take(MaximoTrabajadoresVisibles))
                 {
                     @if (trabajador.TrabajadorNombre is not null)
                     {
@@ -84,12 +84,34 @@
                         }
                     }
                 }
+                @if (empresa.Trabajadores.Count > MaximoTrabajadoresVisibles)
+                {
+                    <div class="grupo-cola-truncado">
+                        @if (CentroUnicoDe(OcultosDe(empresa)) is { } centroId)
+                        {
+                            <a class="enlace-ver-todas" href="@($"/centros/{centroId}")">Ver @OcultosDe(empresa).Count trabajador@(OcultosDe(empresa).Count == 1 ? "" : "es") más en este Centro →</a>
+                        }
+                        else
+                        {
+                            <a class="enlace-ver-todas" href="/bandeja">Ver @OcultosDe(empresa).Count trabajador@(OcultosDe(empresa).Count == 1 ? "" : "es") más en Mi trabajo →</a>
+                        }
+                    </div>
+                }
             }
         </div>
     }
 </div>
 
 @code {
+    /// <summary>
+    /// Un grupo real (cartera grande) puede traer decenas de trabajadores con
+    /// varios documentos cada uno — sin tope, la fila expandida se vuelve una
+    /// pared interminable. Trunca por TRABAJADOR (no por item suelto): la
+    /// unidad con la que el gestor razona aquí es "¿a cuántas personas tengo
+    /// que atender?", no "¿cuántas filas hay?".
+    /// </summary>
+    private const int MaximoTrabajadoresVisibles = 5;
+
     private readonly string _panelId = $"grupo-cola-{Guid.NewGuid():N}";
     private bool _expandida;
 
@@ -147,6 +169,29 @@
 
     private sealed record GrupoTrabajadorItems(string? TrabajadorNombre, IReadOnlyList<ItemBandejaDto> Items);
     private sealed record GrupoEmpresaItems(string? EmpresaNombre, IReadOnlyList<GrupoTrabajadorItems> Trabajadores);
+
+    /// <summary>
+    /// Un GrupoColaDto agrupa por Cliente o Empresa, NUNCA por Centro (ver
+    /// ObtenerBandejaAgrupadaQueryHandler.ClaveGrupo) — los trabajadores
+    /// ocultos por el truncado pueden pertenecer a Centros distintos, así que
+    /// el enlace "ver más" solo puede apuntar a un Centro concreto cuando
+    /// TODOS comparten el mismo (decisión de producto 2026-08-17): si no,
+    /// enlazar a un Centro cualquiera sería llevar al gestor al sitio
+    /// equivocado para parte de lo que dejó fuera.
+    /// </summary>
+    private static IReadOnlyList<GrupoTrabajadorItems> OcultosDe(GrupoEmpresaItems empresa) =>
+        [.. empresa.Trabajadores.Skip(MaximoTrabajadoresVisibles)];
+
+    private static Guid? CentroUnicoDe(IReadOnlyList<GrupoTrabajadorItems> ocultos)
+    {
+        var centros = ocultos.SelectMany(t => t.Items)
+            .Select(i => i.CentroId)
+            .Where(id => id is not null)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+        return centros.Count == 1 ? centros[0] : null;
+    }
 
     /// <summary>
     /// Items sin Trabajador identificable (VisitaUrgente, SugerenciaVisitaUrgente,
