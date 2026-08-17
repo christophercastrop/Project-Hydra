@@ -166,8 +166,26 @@ else
     }
     else
     {
+        @if (TrabajadoresAMostrar.Count > 1)
+        {
+            <div class="acordeon-asignaciones-busqueda">
+                <CampoTexto Placeholder="Buscar trabajador…" Valor="@_busquedaTrabajador" ValorChanged="v => _busquedaTrabajador = v" />
+            </div>
+        }
+        @if (TrabajadoresFiltrados.Count == 0)
+        {
+            <EstadoVacio Titulo="Sin coincidencias" Descripcion="@($"Ningún trabajador coincide con «{_busquedaTrabajador}».")">
+                <Accion>
+                    <Boton Variante="VarianteBoton.Secundario" Tamano="TamanoBoton.Pequeno" OnClick="() => _busquedaTrabajador = string.Empty">
+                        Limpiar búsqueda
+                    </Boton>
+                </Accion>
+            </EstadoVacio>
+        }
+        else
+        {
         <div class="lista-trabajadores-acordeon">
-            @foreach (var trabajador in TrabajadoresAMostrar)
+            @foreach (var trabajador in TrabajadoresFiltrados)
             {
                 var expandido = _expandidosTrabajador.Contains(trabajador.AsignacionId);
                 var vencidos = DocumentosVencidos(trabajador);
@@ -377,6 +395,7 @@ else
                 </div>
             }
         </div>
+        }
         @if (TrabajadoresOcultosAlDia > 0)
         {
             <div class="nota-trabajadores-ocultos">

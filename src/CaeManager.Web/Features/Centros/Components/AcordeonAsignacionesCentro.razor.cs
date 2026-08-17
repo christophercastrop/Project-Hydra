@@ -74,6 +74,7 @@ public partial class AcordeonAsignacionesCentro : ComponentBase
     private bool _cargando = true;
     private bool _errorCarga;
     private IReadOnlyList<TrabajadorAsignacionDocumentacionDto> _trabajadores = [];
+    private string _busquedaTrabajador = string.Empty;
     private readonly HashSet<Guid> _seleccionados = [];
     private bool _seleccionMultipleAnterior;
 
@@ -182,6 +183,17 @@ public partial class AcordeonAsignacionesCentro : ComponentBase
         SoloIncidencias ? _trabajadores.Where(t => t.PeorEstado != EstadoDocumento.Vigente).ToList() : _trabajadores;
 
     private int TrabajadoresOcultosAlDia => SoloIncidencias ? _trabajadores.Count - TrabajadoresAMostrar.Count : 0;
+
+    /// <summary>
+    /// Búsqueda por nombre sobre <see cref="TrabajadoresAMostrar"/> — client-side,
+    /// sin consulta nueva: con una plantilla grande (Centro 360, SoloIncidencias=false)
+    /// la lista completa no tenía ninguna forma de encontrar un trabajador
+    /// concreto sin desplazarse a mano.
+    /// </summary>
+    private IReadOnlyList<TrabajadorAsignacionDocumentacionDto> TrabajadoresFiltrados =>
+        string.IsNullOrWhiteSpace(_busquedaTrabajador)
+            ? TrabajadoresAMostrar
+            : TrabajadoresAMostrar.Where(t => t.TrabajadorNombre.Contains(_busquedaTrabajador, StringComparison.OrdinalIgnoreCase)).ToList();
 
     private void VerCentroCompleto() => NavigationManager.NavigateTo($"/centros/{CentroId}");
 

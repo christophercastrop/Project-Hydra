@@ -632,6 +632,12 @@
     margin-bottom: var(--space-3);
 }
 
+/* Búsqueda de trabajadores del cuerpo de Centro 360 (AcordeonAsignacionesCentro) — solo aparece con más de un trabajador en la lista ya filtrada. */
+.acordeon-asignaciones-busqueda {
+    max-width: 320px;
+    margin-bottom: var(--space-3);
+}
+
 .lista-trabajadores-acordeon {
     display: flex;
     flex-direction: column;
