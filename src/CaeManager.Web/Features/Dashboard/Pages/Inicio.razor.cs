@@ -16,18 +16,15 @@ using Microsoft.AspNetCore.Identity;
 namespace CaeManager.Web.Features.Dashboard.Pages;
 
 /// <summary>
-/// Vista previa del rediseño de Inicio (SCREEN 01 de la auditoría de
-/// producto 2026-08-16, Parte XV) — a propósito NO sustituye
-/// <see cref="Dashboard"/> en "/" todavía: vive en su propia ruta para
-/// poder compararla antes de decidir el reemplazo. Trae dos piezas que
-/// Dashboard no tiene: "Requiere atención" agrupado por situación
+/// Inicio (SCREEN 01 de la auditoría de producto 2026-08-16, Parte XV) —
+/// sustituye al Dashboard anterior en "/" (Dashboard.razor(.cs/.css)
+/// eliminados). Trae dos piezas que el Dashboard antiguo no tenía:
+/// "Requiere atención" agrupado por situación
 /// (<see cref="ObtenerBandejaAgrupadaQuery"/>, hallazgo P-03) y "Pendiente
 /// por plataforma" (<see cref="ObtenerPendientePorPlataformaQuery"/>,
-/// hallazgo P-04). El resto de secciones reutiliza exactamente la misma
-/// consulta que Dashboard — cuando esta vista sustituya a Dashboard, borrar
-/// Dashboard.razor(.cs/.css) en vez de mantener las dos.
+/// hallazgo P-04).
 /// </summary>
-public partial class InicioPreview : ComponentBase
+public partial class Inicio : ComponentBase
 {
     private const int MaximoGruposAtencion = 5;
     private const int MaximoVisitasProximas = 3;
@@ -60,8 +57,8 @@ public partial class InicioPreview : ComponentBase
     /// </summary>
     private bool AgruparPorEmpresa => _perfilVocabulario == PerfilVocabularioTenant.Consultora;
 
-    // "Requiere atención" reutiliza la Bandeja del gestor (igual que
-    // Dashboard) — visible a todos los roles salvo Cliente.
+    // "Requiere atención" reutiliza la Bandeja del gestor — visible a todos
+    // los roles salvo Cliente.
     private bool _mostrarRequiereAtencion;
 
     protected override Task OnInitializedAsync() => CargarAsync();
