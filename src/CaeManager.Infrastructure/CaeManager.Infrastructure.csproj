@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.KeyManagementService" Version="4.0.100.8" />
+    <PackageReference Include="AWSSDK.KeyManagementService" Version="4.0.100.10" />
     <PackageReference Include="AWSSDK.S3" Version="4.0.102" />
     <PackageReference Include="ClosedXML" Version="0.105.*" />
     <PackageReference Include="HtmlSanitizer" Version="9.1.974" />
