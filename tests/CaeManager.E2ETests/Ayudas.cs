@@ -60,6 +60,21 @@ public static class Ayudas
     public const string NombreTenantConsultora = "ArcoSPA Prevención S.L. (Consultora demo)";
     public const string EmailAdministradorConsultora = "admin.arcospa@caemanager.local";
 
+    /// <summary>
+    /// Operador Delegado de ArcoSPA con rol Consulta (ver
+    /// DelegacionDemoSeeder.SembrarOperadoresConsultoraAsync), delegado sobre
+    /// <see cref="NombreClienteDelegadoDemo"/> (Dexter) — el mismo workspace que
+    /// el Administrador inicial, pero con otro rol. A diferencia de ese
+    /// Administrador (rol GestorCae dentro del workspace delegado, HO-136-05:
+    /// cero AsignacionCartera, alcance cero por diseño, ver AlcanceRolesTests),
+    /// Consulta tiene <c>TieneAccesoTotalAsync</c> sin depender de cartera
+    /// (AlcanceDatosService), así que SÍ ve las Empresas sembradas al entrar a
+    /// ese workspace. Usarlo cuando el test necesite comprobar contenido
+    /// visible tras un cambio de workspace sin que el resultado dependa de si
+    /// alguien le asignó cartera.
+    /// </summary>
+    public const string EmailOperadorConsultaConsultora = "prueba.operador.consulta1@caemanager.local";
+
     /// <summary>Primer Cliente Delegante de la demo — la referencia de "empresa final" (ver DelegacionDemoSeeder.NombreTenantRefrielectric).</summary>
     public const string NombreTenantRefrielectric = "Refrielectric S.L. (Cliente Delegante demo)";
 
@@ -79,13 +94,53 @@ public static class Ayudas
     /// M-8 el selector es un &lt;form&gt; HTML que hace POST, así que el envío
     /// lo hace el navegador sin depender de SignalR y se puede ejercitar la
     /// interfaz de verdad — que además es lo que hace el usuario.
+    ///
+    /// HO-136-05: <c>SelectOptionAsync</c> marca el &lt;option&gt; como
+    /// seleccionado en el DOM del cliente antes de que el formulario llegue a
+    /// enviarse — eso es obra de Playwright, no del servidor. Un caller que
+    /// comprobara solo <c>option:checked</c> justo después daría por hecho el
+    /// cambio de workspace aunque el POST nunca hubiera llegado a
+    /// <c>/cuenta/cliente-activo</c> (o el servidor lo hubiera rechazado con
+    /// 401/403): esa comprobación no distingue "el cliente marcó la opción"
+    /// de "el servidor aplicó el cambio". La única prueba de que el servidor
+    /// autorizó y escribió/borró la cookie es su propia respuesta HTTP.
+    ///
+    /// Medido por mutación (HO-136-05): un 3xx por sí solo NO basta. Bajo
+    /// cookie authentication (<c>ConfigureApplicationCookie</c> en Program.cs)
+    /// <c>Results.Forbid()</c>/<c>Results.Unauthorized()</c> no llegan al
+    /// navegador como 401/403 — el middleware los convierte en un 302 hacia
+    /// <c>LoginPath</c>/<c>AccessDeniedPath</c>, que sigue siendo un 3xx.
+    /// Forzar el endpoint a denegar siempre (mutación de prueba) lo confirmó:
+    /// el status seguía en rango 3xx y este assert no lo detectaba — el fallo
+    /// solo aparecía dos pasos más tarde, en el <c>&lt;select&gt;</c>, con un
+    /// mensaje que no apuntaba a la causa real. Por eso además de un 3xx se
+    /// exige que el redirect NO aterrice en ninguna de esas dos rutas de
+    /// autenticación/autorización.
     /// </summary>
     public static async Task CambiarClienteActivoAsync(IPage page, string baseUrl, string nombreCliente)
     {
         var opcion = page.Locator(".selector-cliente-activo option", new PageLocatorOptions { HasText = nombreCliente });
         var tenantId = await opcion.GetAttributeAsync("value");
 
-        await page.SelectOptionAsync(".selector-cliente-activo", new SelectOptionValue { Value = tenantId });
+        var respuestaCambio = await page.RunAndWaitForResponseAsync(
+            () => page.SelectOptionAsync(".selector-cliente-activo", new SelectOptionValue { Value = tenantId }),
+            respuesta => respuesta.Url.Contains("/cuenta/cliente-activo"));
+
+        Assert.True(
+            respuestaCambio.Status is >= 300 and < 400,
+            $"POST a /cuenta/cliente-activo devolvió {respuestaCambio.Status} (se esperaba una redirección 3xx) " +
+            $"al intentar cambiar a «{nombreCliente}» — el servidor no aplicó el cambio de workspace, así que " +
+            "cualquier comprobación posterior sobre el <select> del cliente estaría midiendo una marca sin efecto.");
+
+        var destinoRedirect = respuestaCambio.Headers.GetValueOrDefault("location") ?? string.Empty;
+        Assert.False(
+            destinoRedirect.Contains("acceso-denegado") || destinoRedirect.Contains("iniciar-sesion"),
+            $"POST a /cuenta/cliente-activo redirigió a «{destinoRedirect}» al intentar cambiar a «{nombreCliente}» " +
+            "— eso es LoginPath/AccessDeniedPath (ConfigureApplicationCookie en Program.cs), no un cambio de " +
+            "workspace aplicado: Results.Forbid()/Unauthorized() llegan al navegador como un 3xx hacia esa ruta, " +
+            "no como 401/403, así que el status por sí solo no bastaba para confirmar que el servidor autorizó el " +
+            "cambio.");
+
         await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
