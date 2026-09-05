@@ -12,6 +12,12 @@
 <PageTitle>Lectura IA — @(_cliente?.RazonSocial ?? "Cliente") — @Marca.Nombre</PageTitle>
 
 <div class="contenedor-pagina">
+    @* Única salida de esta pantalla: se llega desde el selector del hub
+       (/configuracion/lectura-ia), que al navegar aquí deja de mostrar su
+       propia subnavegación — sin este enlace la única vuelta era el botón
+       atrás del navegador. *@
+    <a href="/configuracion/lectura-ia" class="enlace-volver-configuracion">← Lectura IA por cliente</a>
+
     <div class="cabecera-pagina">
         <h1 class="titulo-pagina">Lectura automática por IA — @(_cliente?.RazonSocial ?? "…")</h1>
     </div>

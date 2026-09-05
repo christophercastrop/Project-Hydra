@@ -8,11 +8,20 @@ using Microsoft.Extensions.Options;
 namespace CaeManager.Application.Retencion.Commands;
 
 /// <summary>
-/// Lanza el barrido que busca datos con el plazo cumplido. Es manual y no
-/// automático a propósito: la primera vez que el sistema propone destruir
-/// datos conviene que sea porque alguien lo pidió, no porque saltó un
-/// temporizador de madrugada. Convertirlo en periódico es añadir un
-/// BackgroundService que llame a este mismo Command.
+/// Lanza el barrido que busca datos con el plazo cumplido y crea las
+/// propuestas correspondientes.
+///
+/// <para>
+/// Ya no es la única vía de detección: <c>RetencionHostedService</c> (REC-084)
+/// hace lo mismo una vez al día por tenant, invocando directamente
+/// <see cref="DeteccionPurgaService.DetectarAsync"/> sin pasar por este Command.
+/// Este sigue siendo el disparador manual desde la pantalla de Retención.
+/// </para>
+///
+/// <para>
+/// Detectar es lo único automatizado: ni este Command ni el barrido programan
+/// o ejecutan una purga: esos pasos siguen exigiendo una acción humana explícita.
+/// </para>
 /// </summary>
 public record BuscarDatosPurgablesCommand : ICommand<int>;
 

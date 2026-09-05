@@ -116,6 +116,11 @@
         }
     </ChildContent>
     <Pie>
+        @* El botón dice "Ya la copié", así que tiene que haber algo con lo que
+           copiarla: el campo está deshabilitado y la clave no se puede volver
+           a mostrar nunca más. Mismo componente que usa el enlace de
+           activación en Usuarios. *@
+        <BotonCopiar Valor="@(_claveGenerada ?? string.Empty)" />
         <Boton OnClick="() => _claveGenerada = null">Ya la copié</Boton>
     </Pie>
 </Modal>

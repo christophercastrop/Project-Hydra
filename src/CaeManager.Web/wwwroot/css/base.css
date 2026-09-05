@@ -165,3 +165,19 @@ button {
   white-space: nowrap;
   border: 0;
 }
+
+/*
+  Enlace "← Configuración" de las pantallas que se alcanzan desde el hub pero
+  tienen ruta propia. Va aquí, global y sin aislar, porque lo usan varias
+  páginas de features distintas (SeleccionarClienteLecturaIa, Plataforma,
+  ConfiguracionIaCliente) y el aislamiento de CSS de Blazor lo dejaba definido
+  solo dentro de la primera: las otras rendían el enlace sin estilo alguno,
+  con el aspecto de un enlace por defecto del navegador. Mismo síntoma y misma
+  causa que .campo más arriba.
+*/
+.enlace-volver-configuracion {
+  font-size: 13px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}

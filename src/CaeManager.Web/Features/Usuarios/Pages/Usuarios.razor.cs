@@ -290,7 +290,9 @@ public partial class Usuarios : CaeManager.Web.Components.PaginaIntegrableConfig
     {
         if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_nombreCompleto))
         {
-            _mensajeErrorFormulario = "Correo, nombre y contraseña son obligatorios.";
+            // Sin "contraseña": el formulario ya no la pide — la cuenta nace sin
+            // ninguna y el usuario la establece desde su enlace de activación.
+            _mensajeErrorFormulario = "Correo y nombre son obligatorios.";
             return;
         }
 

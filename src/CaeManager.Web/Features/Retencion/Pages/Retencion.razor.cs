@@ -12,8 +12,16 @@ namespace CaeManager.Web.Features.Retencion.Pages;
 ///
 /// El orden de la pantalla refleja el procedimiento acordado con el
 /// propietario del producto: detectar → avisar a la organización → autorizar
-/// con fecha → ejecutar. Cada paso es una acción explícita, y hasta el último
-/// se puede descartar. Nada ocurre por el mero paso del tiempo.
+/// con fecha → ejecutar.
+///
+/// <para>
+/// La detección (paso 1) ocurre de dos formas: el botón de esta pantalla, y el
+/// barrido diario de <c>RetencionHostedService</c> (REC-084), que crea las
+/// mismas propuestas sin que nadie las pida. Los tres pasos siguientes siguen
+/// siendo íntegramente humanos: la máquina propone, la persona dispone, y hasta
+/// el último momento se puede descartar. Ninguna rama automática programa ni
+/// ejecuta una purga.
+/// </para>
 /// </summary>
 public partial class Retencion : CaeManager.Web.Components.PaginaIntegrableConfiguracionBase
 {
