@@ -13,6 +13,9 @@
 }
 
 .pestanas-boton {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;

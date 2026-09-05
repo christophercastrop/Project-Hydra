@@ -22,6 +22,10 @@
                     @ref="_referencias[indice]"
                     @onclick="() => ActivarAsync(definicion.Id)"
                     @onkeydown="e => ManejarTeclaAsync(e, indice)">
+                @if (definicion.Icono is { } nombreIcono)
+                {
+                    <Icono Nombre="@nombreIcono" Tamano="TamanoIcono.Pequeno" />
+                }
                 @definicion.Etiqueta
             </button>
         }

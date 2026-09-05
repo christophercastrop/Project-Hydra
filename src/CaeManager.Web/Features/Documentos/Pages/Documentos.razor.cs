@@ -79,12 +79,15 @@ public partial class Documentos : ComponentBase
 
     private static readonly IReadOnlyList<PestanaDefinicion> _pestanasDocumentos =
     [
-        new("listado", "Listado"),
-        new("plataforma", "Plataforma"),
-        new("reclamaciones", "Reclamaciones"),
-        new("sugerencias", "Preventivo"),
-        new("revision-ia", "Revisión IA"),
-        new("plantillas", "Plantillas")
+        new("listado", "Listado", "documentos"),
+        new("plataforma", "Plataforma", "plataforma"),
+        // "correo" y "reloj" son los más cercanos del catálogo: no hay glifo
+        // propio de reclamación (que sale por correo) ni de preventivo (que
+        // es anticiparse al vencimiento). Si algún día se dibujan, aquí.
+        new("reclamaciones", "Reclamaciones", "correo"),
+        new("sugerencias", "Preventivo", "reloj"),
+        new("revision-ia", "Revisión IA", "ia"),
+        new("plantillas", "Plantillas", "plantilla")
     ];
 
     private string _pestanaActiva = "listado";
